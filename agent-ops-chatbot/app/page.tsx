@@ -32,6 +32,7 @@ const ChatBot = () => {
   const [input, setInput] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
@@ -42,6 +43,14 @@ const ChatBot = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Fetch user profile from backend (mocked user ID 1)
+    fetch('http://localhost:8000/api/user/1')
+      .then(res => res.json())
+      .then(data => setUser(data))
+      .catch(err => console.error('Failed to load user', err));
+  }, []);
+
   const handlePresetClick = async (text: string) => {
     const newMessages = [...messages, { role: 'user', content: text }];
     setMessages(newMessages);
@@ -49,14 +58,17 @@ const ChatBot = () => {
     setShowInput(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('http://localhost:8000/api/mistral-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          prompt: text,
+          chat_history: newMessages,
+        }),
       });
 
       const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+      setMessages([...newMessages, { role: 'assistant', content: data.content || 'No response' }]);
     } catch (err) {
       console.error('Error sending message:', err);
     } finally {
@@ -72,14 +84,17 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('http://localhost:8000/api/mistral-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          prompt: input,
+          chat_history: newMessages,
+        }),
       });
 
       const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+      setMessages([...newMessages, { role: 'assistant', content: data.content || 'No response' }]);
     } catch (err) {
       console.error('Error sending message:', err);
     } finally {
@@ -90,8 +105,18 @@ const ChatBot = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      console.log('Uploaded file:', file);
-      // Add actual file handling logic here
+      const formData = new FormData();
+      formData.append('file', file);
+
+      fetch('http://localhost:8000/api/upload-skills', {
+        method: 'POST',
+        body: formData,
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('File uploaded successfully:', data);
+        })
+        .catch(err => console.error('File upload failed:', err));
     }
   };
 
@@ -100,21 +125,16 @@ const ChatBot = () => {
       {/* Left Sidebar: User Profile */}
       <div className="w-1/4 h-full bg-white border-r p-6">
         <h2 className="text-lg font-bold mb-4">Your Profile</h2>
-        <div className="space-y-2 text-sm">
-          <p><strong>Name:</strong> Jane Doe</p>
-          <p><strong>Role:</strong> Software Engineer</p>
-          <p><strong>Department:</strong> Product Innovation</p>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-2">Uploaded Skills</h3>
-          <ul className="list-disc list-inside text-sm text-gray-600">
-            <li>React</li>
-            <li>TypeScript</li>
-            <li>Communication</li>
-            <li>Team Leadership</li>
-          </ul>
-        </div>
+        {user ? (
+          <div className="space-y-2 text-sm">
+            <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Role:</strong> {user.designation?.title || 'N/A'}</p>
+            <p><strong>Department:</strong> {user.department?.name || 'N/A'}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Loading profile...</p>
+        )}
       </div>
 
       {/* Chatbot Section */}
