@@ -1,4 +1,3 @@
-// pages/login.tsx
 'use client';
 
 import { useState } from 'react';
@@ -20,12 +19,12 @@ export default function LoginPage() {
       if (res.ok) {
         const user = await res.json();
         localStorage.setItem('user', JSON.stringify(user));
-        router.push('/');
+        router.push('/chat'); // 
       } else {
-        alert('Invalid email or password');
+        alert('Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error(error);
     }
   };
 
@@ -33,32 +32,35 @@ export default function LoginPage() {
     <div className="flex justify-center items-center h-screen bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-        <div className="mb-4">
-          <label className="block mb-1 text-sm font-medium">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block mb-1 text-sm font-medium">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
-        </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+        />
         <button
           onClick={handleLogin}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md mb-2"
         >
           Log In
         </button>
+        <p className="text-center text-sm">
+          Don’t have an account?{' '}
+          <button
+            className="text-blue-600 hover:underline"
+            onClick={() => router.push('/register')}
+          >
+            Register
+          </button>
+        </p>
       </div>
     </div>
   );

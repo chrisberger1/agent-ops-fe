@@ -29,7 +29,7 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        router.push('/login');
+        router.push('/login'); // Redirect to login page after successful registration
       } else {
         alert('Registration failed');
       }
