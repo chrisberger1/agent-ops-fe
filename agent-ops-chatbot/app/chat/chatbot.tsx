@@ -2,6 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
+let role: string;
+let chatHistory: ChatMessage[] = [];
+let indexLoaded: boolean = false;
 
 const Button = ({ onClick, disabled, children }: any) => (
   <button
@@ -57,24 +65,45 @@ const ChatBot = () => {
     router.push('/login');
   };
 
-  const handlePresetClick = async (text: string) => {
+  const handlePresetClick = async (text: string, user: string) => {
     const newMessages = [...messages, { role: 'user', content: text }];
     setMessages(newMessages);
     setLoading(true);
     setShowInput(true);
 
+    role = user;
+
+    if (role === 'staff' && !indexLoaded) {
+      try {
+        const response = await fetch('http://localhost:8000/index-opportunity', {
+          method: 'GET',
+        });
+
+        if (response.ok) {
+          indexLoaded = true;
+        } else {
+          console.error('Failed to create index');
+        }
+      }
+      catch (err) {
+        console.error('Error creating index:', err);
+      }
+    }
+
     try {
-      const response = await fetch('http://localhost:8000/api/mistral-chat', {
+      const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          user: role,
           prompt: text,
-          chat_history: newMessages,
+          chat_history: chatHistory,
         }),
       });
 
       const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.content || 'No response' }]);
+      chatHistory = data.chat_history;
+      setMessages([...newMessages, { role: 'assistant', content: data.response || 'No response' }]);
     } catch (err) {
       console.error('Error sending message:', err);
     } finally {
@@ -90,17 +119,19 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/mistral-chat', {
+      const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          user: role,
           prompt: input,
-          chat_history: newMessages,
+          chat_history: chatHistory,
         }),
       });
 
       const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.content || 'No response' }]);
+      chatHistory = data.chat_history;
+      setMessages([...newMessages, { role: 'assistant', content: data.response || 'No response' }]);
     } catch (err) {
       console.error('Error sending message:', err);
     } finally {
@@ -123,6 +154,20 @@ const ChatBot = () => {
           console.log('File uploaded successfully:', data);
         })
         .catch(err => console.error('File upload failed:', err));
+    }
+  };
+
+  const createOpportunity = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_history: chatHistory,
+        }),
+      });
+    } catch (err) {
+      console.error('Error creating index:', err);
     }
   };
 
@@ -163,10 +208,10 @@ const ChatBot = () => {
           <div className="max-w-2xl mx-auto space-y-2">
             {!showInput ? (
               <div className="flex gap-4">
-                <Button onClick={() => handlePresetClick("I'm looking for opportunity")} disabled={loading}>
+                <Button onClick={() => handlePresetClick("I'm looking for opportunity", "staff")} disabled={loading}>
                   I'm looking for opportunity
                 </Button>
-                <Button onClick={() => handlePresetClick("I'm posting an opportunity")} disabled={loading}>
+                <Button onClick={() => handlePresetClick("I'm posting an opportunity", "lead")} disabled={loading}>
                   I'm posting an opportunity
                 </Button>
               </div>
@@ -183,14 +228,18 @@ const ChatBot = () => {
                 <Button onClick={sendMessage} disabled={loading}>
                   {loading ? 'Sending...' : 'Send'}
                 </Button>
+                <Button onClick={() => createOpportunity()} disabled={loading}>
+                  Create Opportunity
+                </Button>
               </div>
             )}
-            <input
+            {/* <input
               type="file"
               accept=".csv,.xlsx,.xls"
               onChange={handleFileUpload}
               className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
+            /> */}
+            
           </div>
         </div>
       </div>

@@ -11,7 +11,8 @@ export default function ChatPage() {
   useEffect(() => {
     const user = localStorage.getItem('user');
     if (!user) {
-      router.push('/login');
+      // router.push('/login');
+      setLoading(false);
     } else {
       setLoading(false);
     }
