@@ -56,7 +56,9 @@ const ChatBot = () => {
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
-      setUser(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      setUser(parsed);
+      role = parsed.designation?.toLowerCase() || ''; // Set global role
     }
   }, []);
 
@@ -145,7 +147,7 @@ const ChatBot = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      fetch('http://localhost:8000/api/upload-skills', {
+      fetch('http://localhost:8000/upload-skills', {
         method: 'POST',
         body: formData,
       })
@@ -180,8 +182,8 @@ const ChatBot = () => {
             <div className="space-y-2 text-sm">
               <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
               <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Role:</strong> {user.designation?.title || 'N/A'}</p>
-              <p><strong>Department:</strong> {user.department?.name || 'N/A'}</p>
+              <p><strong>Role:</strong> {user.designation}</p>
+              <p><strong>Department:</strong> {user.department}</p>
             </div>
           ) : (
             <p className="text-sm text-gray-500">Loading profile...</p>
