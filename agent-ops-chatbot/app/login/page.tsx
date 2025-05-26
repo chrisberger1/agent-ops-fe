@@ -1,25 +1,33 @@
+// pages/login.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({
+    username: '',
+    password: '',
+  });
+
   const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleLogin = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const res = await fetch('http://localhost:8000/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
       });
 
       if (res.ok) {
-        const user = await res.json();
-        localStorage.setItem('user', JSON.stringify(user));
-        router.push('/chat'); // 
+        const login_res = await res.json();
+        localStorage.setItem('user', JSON.stringify(login_res.user));
+        router.push('/chat');
       } else {
         alert('Login failed');
       }
@@ -34,16 +42,16 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
         <input
           type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          name="username"
+          onChange={handleChange}
+          placeholder="Username"
           className="w-full mb-4 p-2 border border-gray-300 rounded-md"
         />
         <input
+          name="password"
+          onChange={handleChange}
           type="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
           className="w-full mb-4 p-2 border border-gray-300 rounded-md"
         />
         <button
